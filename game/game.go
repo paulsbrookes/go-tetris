@@ -179,18 +179,39 @@ func (g *Game) Reset() {
 	g.spawnPiece()
 }
 
-// Update updates the game state based on elapsed time
-func (g *Game) Update() {
+// CalculateGravityInterval returns the drop interval for a given level
+// Uses exponential decay: starts at 1000ms at level 1, goes down to 100ms at level 10+
+func CalculateGravityInterval(level int) time.Duration {
+	if level <= 0 {
+		level = 1
+	}
+	
+	// Exponential decay formula: interval = 1000 * 0.85^(level-1)
+	// Clamped to minimum of 100ms
+	interval := InitialDropInterval
+	for i := 1; i < level; i++ {
+		interval = int(float64(interval) * 0.85)
+		if interval < MinDropInterval {
+			interval = MinDropInterval
+			break
+		}
+	}
+	
+	return time.Duration(interval) * time.Millisecond
+}
+
+// ApplyGravity moves the current piece down one row (called by gravity ticker)
+func (g *Game) ApplyGravity() {
 	if g.paused || g.gameOver {
 		return
 	}
-	
-	// Check if it's time to drop the piece
-	now := time.Now()
-	if now.Sub(g.lastDropTime) >= g.dropInterval {
-		g.MoveDown()
-		g.lastDropTime = now
-	}
+	g.MoveDown()
+}
+
+// Update updates the game state (called each frame)
+func (g *Game) Update() {
+	// Frame-based updates can go here if needed
+	// Gravity is now handled by the gravity ticker calling ApplyGravity()
 }
 
 // MoveLeft moves the current piece left if possible
