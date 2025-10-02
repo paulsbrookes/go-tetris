@@ -33,40 +33,85 @@ func main() {
 	// Start input handling
 	inputHandler.Start()
 	
-	// Ensure cleanup on exit
-	defer inputHandler.Stop()
+	// Ensure cleanup on exit with panic recovery
+	defer func() {
+		if r := recover(); r != nil {
+			// Ensure terminal cleanup even on panic
+			inputHandler.Stop()
+			fmt.Fprintf(os.Stderr, "Panic recovered: %v\n", r)
+			os.Exit(1)
+		}
+		inputHandler.Stop()
+	}()
 	
 	// Create new game
 	gameState := game.New()
 	
-	// Main game loop
+	// Run the game loop
+	runGameLoop(gameState, inputHandler, screen)
+}
+
+// runGameLoop implements the main game loop with frame and gravity tickers
+func runGameLoop(gameState *game.Game, inputHandler *input.Handler, screen interface{ Show() }) {
+	// Initialize frame ticker for consistent 60 FPS
+	frameTicker := time.NewTicker(FrameDuration)
+	defer frameTicker.Stop()
+	
+	// Initialize gravity ticker based on starting level
+	gravityInterval := game.CalculateGravityInterval(gameState.GetLevel())
+	gravityTicker := time.NewTicker(gravityInterval)
+	defer gravityTicker.Stop()
+	
+	// Track game state for ticker management
+	lastLevel := gameState.GetLevel()
+	wasPaused := gameState.IsPaused()
 	running := true
-	lastFrameTime := time.Now()
 	
 	for running {
-		frameStart := time.Now()
-		
-		// Process input events
 		select {
+		case <-frameTicker.C:
+			// Frame tick: update and render
+			gameState.Update()
+			renderer.Render(screen, gameState)
+			
+			// Check if level changed and adjust gravity speed
+			currentLevel := gameState.GetLevel()
+			if currentLevel != lastLevel {
+				lastLevel = currentLevel
+				gravityTicker.Stop()
+				gravityInterval = game.CalculateGravityInterval(currentLevel)
+				gravityTicker = time.NewTicker(gravityInterval)
+				defer gravityTicker.Stop()
+			}
+			
+			// Handle pause state changes
+			isPaused := gameState.IsPaused()
+			if isPaused != wasPaused {
+				wasPaused = isPaused
+				if isPaused {
+					// Stop gravity ticker when paused
+					gravityTicker.Stop()
+				} else {
+					// Resume gravity ticker when unpaused
+					gravityInterval = game.CalculateGravityInterval(currentLevel)
+					gravityTicker = time.NewTicker(gravityInterval)
+					defer gravityTicker.Stop()
+				}
+			}
+			
+		case <-gravityTicker.C:
+			// Gravity tick: apply automatic piece drop
+			if !gameState.IsPaused() && !gameState.IsGameOver() {
+				gameState.ApplyGravity()
+			}
+			
 		case action := <-inputHandler.Actions():
+			// Input event: handle user action
 			running = handleAction(gameState, action)
-		default:
-			// No input to process
+			if !running {
+				return
+			}
 		}
-		
-		// Update game state
-		gameState.Update()
-		
-		// Render current state
-		renderer.Render(screen, gameState)
-		
-		// Frame rate limiting
-		elapsed := time.Since(frameStart)
-		if elapsed < FrameDuration {
-			time.Sleep(FrameDuration - elapsed)
-		}
-		
-		lastFrameTime = frameStart
 	}
 }
 
