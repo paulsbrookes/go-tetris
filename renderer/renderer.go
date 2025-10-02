@@ -109,17 +109,42 @@ func Render(screen tcell.Screen, game GameState) {
 	// Draw game over overlay
 	if game.IsGameOver() {
 		gameOverText := "GAME OVER"
-		restartText := "Press R to restart"
 		
+		// Calculate center position for game over text
 		gameOverX := offsetX + (boardWidth*2+2-len(gameOverText))/2
-		restartX := offsetX + (boardWidth*2+2-len(restartText))/2
-		centerY := offsetY + boardHeight/2
+		centerY := offsetY + boardHeight/2 - 3
 		
+		// Draw "GAME OVER" title in red, bold
 		style := tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorRed).Bold(true)
 		drawText(screen, gameOverX, centerY, gameOverText, style)
 		
-		style = tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorWhite)
-		drawText(screen, restartX, centerY+2, restartText, style)
+		// Draw final statistics
+		statsStyle := tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorWhite).Bold(true)
+		normalStyle := tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorWhite)
+		
+		// Final Score
+		scoreText := fmt.Sprintf("Final Score: %d", game.GetScore())
+		scoreX := offsetX + (boardWidth*2+2-len(scoreText))/2
+		drawText(screen, scoreX, centerY+2, scoreText, statsStyle)
+		
+		// Lines Cleared
+		linesText := fmt.Sprintf("Lines Cleared: %d", game.GetLines())
+		linesX := offsetX + (boardWidth*2+2-len(linesText))/2
+		drawText(screen, linesX, centerY+3, linesText, statsStyle)
+		
+		// Final Level
+		levelText := fmt.Sprintf("Level Reached: %d", game.GetLevel())
+		levelX := offsetX + (boardWidth*2+2-len(levelText))/2
+		drawText(screen, levelX, centerY+4, levelText, statsStyle)
+		
+		// Action options
+		restartText := "Press R to Restart"
+		restartX := offsetX + (boardWidth*2+2-len(restartText))/2
+		drawText(screen, restartX, centerY+6, restartText, normalStyle)
+		
+		quitText := "Press Q to Quit"
+		quitX := offsetX + (boardWidth*2+2-len(quitText))/2
+		drawText(screen, quitX, centerY+7, quitText, normalStyle)
 	}
 	
 	screen.Show()
