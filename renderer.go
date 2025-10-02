@@ -88,13 +88,35 @@ func (r *Renderer) RenderPiece(piece *Piece) {
 	if piece == nil {
 		return
 	}
-	
+
 	blocks := piece.GetBlocks()
 	color := piece.Color()
-	
+
 	for _, block := range blocks {
 		if block.Y >= 0 && block.Y < BoardHeight {
 			r.drawBlock(BoardOffsetX/2+block.X, BoardOffsetY+block.Y, color)
+		}
+	}
+}
+
+// RenderGhostPiece renders the ghost piece (shows where the piece will land)
+func (r *Renderer) RenderGhostPiece(piece *Piece) {
+	if piece == nil {
+		return
+	}
+
+	blocks := piece.GetBlocks()
+
+	// Use a dim gray style for ghost blocks
+	style := tcell.StyleDefault.Background(tcell.ColorDarkGray).Foreground(tcell.ColorBlack)
+
+	for _, block := range blocks {
+		if block.Y >= 0 && block.Y < BoardHeight {
+			x := BoardOffsetX + block.X*2
+			y := BoardOffsetY + block.Y
+			// Draw with a dimmed/outline appearance
+			r.screen.SetContent(x, y, '▪', nil, style)
+			r.screen.SetContent(x+1, y, '▪', nil, style)
 		}
 	}
 }
@@ -154,8 +176,9 @@ func (r *Renderer) RenderInfo(game *Game) {
 	r.drawText(InfoOffsetX, InfoOffsetY+19, "← → : Move", style)
 	r.drawText(InfoOffsetX, InfoOffsetY+20, "↑   : Rotate", style)
 	r.drawText(InfoOffsetX, InfoOffsetY+21, "↓   : Soft Drop", style)
-	r.drawText(InfoOffsetX, InfoOffsetY+22, "SPC : Pause", style)
-	r.drawText(InfoOffsetX, InfoOffsetY+23, "Q   : Quit", style)
+	r.drawText(InfoOffsetX, InfoOffsetY+22, "SPC : Hard Drop", style)
+	r.drawText(InfoOffsetX, InfoOffsetY+23, "P   : Pause", style)
+	r.drawText(InfoOffsetX, InfoOffsetY+24, "Q   : Quit", style)
 }
 
 // RenderPauseScreen renders the pause overlay
@@ -168,9 +191,9 @@ func (r *Renderer) RenderPauseScreen() {
 	r.drawText(centerX-4, centerY-1, "═════════", style)
 	r.drawText(centerX-2, centerY, "PAUSED", style)
 	r.drawText(centerX-4, centerY+1, "═════════", style)
-	
+
 	style = tcell.StyleDefault.Foreground(tcell.ColorWhite)
-	r.drawText(centerX-7, centerY+3, "Space to Resume", style)
+	r.drawText(centerX-5, centerY+3, "P to Resume", style)
 }
 
 // RenderGameOverScreen renders the game over screen
@@ -200,28 +223,30 @@ func (r *Renderer) RenderGameOverScreen(game *Game) {
 // Render renders the complete game state
 func (r *Renderer) Render(game *Game) {
 	r.Clear()
-	
+
 	// Draw border
 	r.drawBorder()
-	
+
 	// Draw board
 	r.RenderBoard(game.Board)
-	
-	// Draw current piece (if playing)
+
+	// Draw ghost piece and current piece (if playing)
 	if game.State == StatePlaying {
+		ghostPiece := game.GetGhostPiece()
+		r.RenderGhostPiece(ghostPiece)
 		r.RenderPiece(game.CurrentPiece)
 	}
-	
+
 	// Draw next piece and info
 	r.RenderNextPiece(game.NextPiece)
 	r.RenderInfo(game)
-	
+
 	// Draw overlays
 	if game.State == StatePaused {
 		r.RenderPauseScreen()
 	} else if game.State == StateGameOver {
 		r.RenderGameOverScreen(game)
 	}
-	
+
 	r.Show()
 }

@@ -75,13 +75,13 @@ func NewRandomPiece() *Piece {
 
 // pieceColors defines the color for each piece type
 var pieceColors = map[PieceType]tcell.Color{
-	PieceI: tcell.ColorCyan,
+	PieceI: tcell.NewRGBColor(0, 255, 255),   // Cyan
 	PieceO: tcell.ColorYellow,
-	PieceT: tcell.ColorPurple,
+	PieceT: tcell.NewRGBColor(128, 0, 128),   // Purple
 	PieceS: tcell.ColorGreen,
 	PieceZ: tcell.ColorRed,
 	PieceJ: tcell.ColorBlue,
-	PieceL: tcell.ColorOrange,
+	PieceL: tcell.NewRGBColor(255, 165, 0),   // Orange
 }
 
 // pieceShapes defines all rotation states for each piece type

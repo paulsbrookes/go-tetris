@@ -235,6 +235,32 @@ func (g *Game) TogglePause() {
 	}
 }
 
+// GetGhostPiece returns a piece at the position where the current piece would land
+func (g *Game) GetGhostPiece() *Piece {
+	if g.CurrentPiece == nil {
+		return nil
+	}
+
+	// Create a copy of the current piece
+	ghost := &Piece{
+		Type:     g.CurrentPiece.Type,
+		X:        g.CurrentPiece.X,
+		Y:        g.CurrentPiece.Y,
+		Rotation: g.CurrentPiece.Rotation,
+	}
+
+	// Drop it down until it can't move anymore
+	for {
+		ghost.Y++
+		if !g.Board.CanPlacePiece(ghost) {
+			ghost.Y--
+			break
+		}
+	}
+
+	return ghost
+}
+
 // Reset resets the game to initial state
 func (g *Game) Reset() {
 	g.Board.Clear()

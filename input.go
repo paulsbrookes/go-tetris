@@ -10,8 +10,14 @@ func HandleInput(game *Game, event *tcell.EventKey) bool {
 	}
 	
 	// Handle pause
-	if event.Rune() == ' ' {
+	if event.Rune() == 'p' || event.Rune() == 'P' {
 		game.TogglePause()
+		return false
+	}
+
+	// Handle hard drop
+	if event.Rune() == ' ' {
+		game.HardDrop()
 		return false
 	}
 	
