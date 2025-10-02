@@ -86,7 +86,7 @@ func New() *Game {
 		paused:       false,
 		gameOver:     false,
 		lastDropTime: time.Now(),
-		dropInterval: InitialDropInterval * time.Millisecond,
+		dropInterval: GetGravitySpeed(1),
 		rand:         rand.New(rand.NewSource(time.Now().UnixNano())),
 	}
 	
@@ -175,29 +175,14 @@ func (g *Game) Reset() {
 	g.paused = false
 	g.gameOver = false
 	g.lastDropTime = time.Now()
-	g.dropInterval = InitialDropInterval * time.Millisecond
+	g.dropInterval = GetGravitySpeed(g.level)
 	g.spawnPiece()
 }
 
 // CalculateGravityInterval returns the drop interval for a given level
-// Uses exponential decay: starts at 1000ms at level 1, goes down to 100ms at level 10+
+// Deprecated: Use GetGravitySpeed instead
 func CalculateGravityInterval(level int) time.Duration {
-	if level <= 0 {
-		level = 1
-	}
-	
-	// Exponential decay formula: interval = 1000 * 0.85^(level-1)
-	// Clamped to minimum of 100ms
-	interval := InitialDropInterval
-	for i := 1; i < level; i++ {
-		interval = int(float64(interval) * 0.85)
-		if interval < MinDropInterval {
-			interval = MinDropInterval
-			break
-		}
-	}
-	
-	return time.Duration(interval) * time.Millisecond
+	return GetGravitySpeed(level)
 }
 
 // ApplyGravity moves the current piece down one row (called by gravity ticker)
@@ -386,54 +371,40 @@ func (g *Game) lockPiece() {
 
 // clearLines clears completed lines and updates score
 func (g *Game) clearLines() {
-	linesCleared := 0
+	// Check for completed lines
+	completedRows := CheckLines(g.board)
 	
-	// Check each row from bottom to top
-	for y := BoardHeight - 1; y >= 0; y-- {
-		full := true
-		for x := 0; x < BoardWidth; x++ {
-			if g.board[y][x] == 0 {
-				full = false
-				break
-			}
-		}
-		
-		if full {
-			linesCleared++
-			// Remove this line and shift everything down
-			for yy := y; yy > 0; yy-- {
-				copy(g.board[yy], g.board[yy-1])
-			}
-			// Clear top line
-			for x := 0; x < BoardWidth; x++ {
-				g.board[0][x] = 0
-			}
-			// Check this row again since we shifted
-			y++
-		}
+	if len(completedRows) == 0 {
+		return
 	}
 	
-	// Update score based on lines cleared
-	if linesCleared > 0 {
-		g.lines += linesCleared
-		
-		// Scoring: 100, 300, 500, 800 for 1, 2, 3, 4 lines
-		lineScores := []int{0, 100, 300, 500, 800}
-		if linesCleared >= len(lineScores) {
-			linesCleared = len(lineScores) - 1
-		}
-		g.score += lineScores[linesCleared] * g.level
-		
-		// Level up every 10 lines
-		newLevel := g.lines/10 + 1
-		if newLevel > g.level {
-			g.level = newLevel
-			// Increase drop speed
-			g.dropInterval -= time.Duration(SpeedIncrement) * time.Millisecond
-			if g.dropInterval < MinDropInterval*time.Millisecond {
-				g.dropInterval = MinDropInterval * time.Millisecond
-			}
-		}
+	linesCleared := len(completedRows)
+	
+	// Clear the lines from the board
+	ClearLines(g.board, completedRows)
+	
+	// Update game state
+	g.updateGameState(linesCleared)
+}
+
+// updateGameState updates score, lines counter, and level based on lines cleared
+func (g *Game) updateGameState(linesCleared int) {
+	if linesCleared <= 0 {
+		return
+	}
+	
+	// Update total lines cleared
+	g.lines += linesCleared
+	
+	// Calculate and add score
+	g.score += CalculateScore(linesCleared, g.level)
+	
+	// Check for level up (every 10 lines)
+	newLevel := g.lines/10 + 1
+	if newLevel > g.level {
+		g.level = newLevel
+		// Update drop speed based on new level
+		g.dropInterval = GetGravitySpeed(g.level)
 	}
 }
 
