@@ -178,11 +178,11 @@ func getCellStyle(cellValue int) tcell.Style {
 	case 0:
 		return baseStyle.Background(tcell.ColorBlack).Foreground(tcell.ColorBlack)
 	case 1:
-		return baseStyle.Background(tcell.ColorCyan).Foreground(tcell.ColorCyan)
+		return baseStyle.Background(tcell.ColorAqua).Foreground(tcell.ColorAqua)
 	case 2:
 		return baseStyle.Background(tcell.ColorBlue).Foreground(tcell.ColorBlue)
 	case 3:
-		return baseStyle.Background(tcell.ColorOrange).Foreground(tcell.ColorOrange)
+		return baseStyle.Background(tcell.ColorOlive).Foreground(tcell.ColorOlive)
 	case 4:
 		return baseStyle.Background(tcell.ColorYellow).Foreground(tcell.ColorYellow)
 	case 5:

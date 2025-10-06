@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"os"
 	"time"
-	
+
+	"github.com/gdamore/tcell/v2"
 	"github.com/yourusername/go-tetris/game"
 	"github.com/yourusername/go-tetris/input"
 	"github.com/yourusername/go-tetris/renderer"
@@ -28,7 +29,7 @@ func main() {
 	}
 	
 	// Get screen reference
-	screen := inputHandler.GetScreen()
+	var screen tcell.Screen = inputHandler.GetScreen()
 	
 	// Start input handling
 	inputHandler.Start()
@@ -52,7 +53,7 @@ func main() {
 }
 
 // runGameLoop implements the main game loop with frame and gravity tickers
-func runGameLoop(gameState *game.Game, inputHandler *input.Handler, screen interface{ Show() }) {
+func runGameLoop(gameState *game.Game, inputHandler *input.Handler, screen tcell.Screen) {
 	// Initialize frame ticker for consistent 60 FPS
 	frameTicker := time.NewTicker(FrameDuration)
 	defer frameTicker.Stop()
